@@ -1,0 +1,149 @@
+#include <iostream>
+#include <string>
+#include <vector>
+#include <queue>
+#include <algorithm>
+using namespace std;
+
+class Node {
+public:
+    int val;
+    Node* right;
+    Node* left;
+
+    Node(int v) : val(v), right(nullptr), left(nullptr) {}
+};
+
+vector<string> display_aux(Node* node, int& width, int& height, int& middle) {
+    if (node->right == nullptr && node->left == nullptr) {
+        string line = to_string(node->val);
+        width = line.size();
+        height = 1;
+        middle = width / 2;
+        return {line};
+    }
+
+    if (node->right == nullptr) {
+        int n, p, x;
+        vector<string> lines = display_aux(node->left, n, p, x);
+        string s = to_string(node->val);
+        int u = s.size();
+        string first_line = string(x + 1, ' ') + string(n - x - 1, '_') + s;
+        string second_line = string(x, ' ') + "/" + string(n - x - 1 + u, ' ');
+        vector<string> shifted_lines;
+        for (auto& line : lines) {
+            shifted_lines.push_back(line + string(u, ' '));
+        }
+        vector<string> result = {first_line, second_line};
+        result.insert(result.end(), shifted_lines.begin(), shifted_lines.end());
+        width = n + u;
+        height = p + 2;
+        middle = n + u / 2;
+        return result;
+    }
+
+    if (node->left == nullptr) {
+        int n, p, x;
+        vector<string> lines = display_aux(node->right, n, p, x);
+        string s = to_string(node->val);
+        int u = s.size();
+        string first_line = s + string(x, '_') + string(n - x, ' ');
+        string second_line = string(u + x, ' ') + "\\" + string(n - x - 1, ' ');
+        vector<string> shifted_lines;
+        for (auto& line : lines) {
+            shifted_lines.push_back(string(u, ' ') + line);
+        }
+        vector<string> result = {first_line, second_line};
+        result.insert(result.end(), shifted_lines.begin(), shifted_lines.end());
+        width = n + u;
+        height = p + 2;
+        middle = u / 2;
+        return result;
+    }
+
+    int n, p, x, m, q, y;
+    vector<string> left = display_aux(node->left, n, p, x);
+    vector<string> right = display_aux(node->right, m, q, y);
+    string s = to_string(node->val);
+    int u = s.size();
+    string first_line = string(x + 1, ' ') + string(n - x - 1, ' ') + s + string(y, ' ') + string(m - y, ' ');
+    string second_line = string(x, ' ') + "/" + string(n - x - 1 + u + y, ' ') + "\\" + string(m - y - 1, ' ');
+
+    if (p < q) {
+        for (int i = 0; i < q - p; i++) left.push_back(string(n, ' '));
+    } else if (q < p) {
+        for (int i = 0; i < p - q; i++) right.push_back(string(m, ' '));
+    }
+
+    vector<string> zipped_lines;
+    for (int i = 0; i < left.size(); i++) {
+        zipped_lines.push_back(left[i] + string(u, ' ') + right[i]);
+    }
+
+    vector<string> result = {first_line, second_line};
+    result.insert(result.end(), zipped_lines.begin(), zipped_lines.end());
+    width = n + m + u;
+    height = max(p, q) + 2;
+    middle = n + u / 2;
+    return result;
+}
+
+void print_tree_2d(Node* root) {
+    if (!root) return;
+    int width, height, middle;
+    vector<string> lines = display_aux(root, width, height, middle);
+    for (const string& line : lines) {
+        cout << line << endl;
+    }
+}
+
+int main() {
+    vector<int> nodes;
+    string num;
+
+    while (true) {
+        cout << "Enter a number to add to the binary tree or 'stop' to finish: ";
+        cin >> num;
+        if (num != "stop") {
+            nodes.push_back(stoi(num));
+        } else {
+            cout << "Here is your binary tree:" << endl;
+            break;
+        }
+    }
+
+    sort(nodes.begin(), nodes.end());
+
+    vector<int> temp;
+    int length = nodes.size();
+    while (temp.size() < length) {
+        int idx = nodes.size() / 2;
+        temp.push_back(nodes[idx]);
+        nodes.erase(nodes.begin() + idx);
+    }
+    nodes = temp;
+
+    Node* root = new Node(nodes[0]);
+    queue<Node*> queue;
+    queue.push(root);
+
+    int i = 1;
+    while (i < nodes.size()) {
+        Node* curr = queue.front();
+        queue.pop();
+        if (i < nodes.size()) {
+            curr->right = new Node(nodes[i]);
+            queue.push(curr->right);
+            i++;
+        }
+        if (i < nodes.size()) {
+            curr->left = new Node(nodes[i]);
+            queue.push(curr->left);
+            i++;
+        }
+    }
+
+    print_tree_2d(root);
+
+    return 0;
+}
